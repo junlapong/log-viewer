@@ -23,13 +23,11 @@
             <groupId>org.atmosphere</groupId>
             <artifactId>atmosphere-compat-tomcat7</artifactId>
             <version>2.0.1</version>
-            <!-- <scope>provided</scope> -->
         </dependency>
         <dependency>
             <groupId>org.atmosphere</groupId>
             <artifactId>atmosphere-runtime</artifactId>
             <version>2.4.5</version>
-            <!-- <scope>provided</scope> -->
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -41,13 +39,11 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.5</version>
-            <!-- <scope>provided</scope> -->
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
             <version>1.1.1</version>
-            <!-- <scope>provided</scope> -->
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -92,7 +88,7 @@
                     <password>manager</password>
                 </configuration>
             </plugin>
-		</plugins>
+        </plugins>
 	</build>
 
 </project>
