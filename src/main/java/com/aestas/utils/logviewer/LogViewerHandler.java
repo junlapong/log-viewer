@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * @author luciano - luciano@aestasit.com
  */
-public class LogViewerHandler extends TailerListenerAdapter implements AtmosphereHandler<HttpServletRequest, HttpServletResponse> {
+public class LogViewerHandler extends TailerListenerAdapter implements AtmosphereHandler {
 
     private final static String FILE_TO_WATCH = "/var/log/";
     //private final static String FILE_TO_WATCH = "d://temp";
@@ -30,8 +30,12 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
     private static List<String> watchableLogs = new ArrayList<String>();
 
     public LogViewerHandler() {
+
         final File logsDir = new File(FILE_TO_WATCH);
+
         if (logsDir.exists() && logsDir.isDirectory()) {
+            System.out.println("log path: " + logsDir.getAbsolutePath());
+
             File[] logs = logsDir.listFiles();
             for (File f : logs) {
                 if (f.getName().endsWith(".log")) {
@@ -42,10 +46,11 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
             System.out.println("either logsDir doesn't exist or is not a folder");
         }
 
+        System.out.println("log count: " + watchableLogs.size());
     }
 
     @Override
-    public void onRequest(final AtmosphereResource<HttpServletRequest, HttpServletResponse> event) throws IOException {
+    public void onRequest(final AtmosphereResource event) throws IOException {
 
         HttpServletRequest req = event.getRequest();
         HttpServletResponse res = event.getResponse();
@@ -60,6 +65,9 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
 
             if (watchableLogs.size() != 0) {
                 GLOBAL_BROADCASTER.broadcast(asJsonArray("logs", watchableLogs));
+            }
+            else {
+                System.out.println("log not found");
             }
 
             res.getWriter().flush();
@@ -76,16 +84,21 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
     }
 
     @Override
-    public void onStateChange(
-            final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) throws IOException {
+    public void onStateChange(final AtmosphereResourceEvent event) throws IOException {
 
         HttpServletResponse res = event.getResource().getResponse();
         if (event.isResuming()) {
             res.getWriter().write("Atmosphere closed<br/>");
             res.getWriter().write("</body></html>");
         } else {
-            res.getWriter().write(event.getMessage().toString());
+            if (event.getMessage() != null) {
+                res.getWriter().write(event.getMessage().toString());
+            }
+            else {
+                res.getWriter().write("");
+            }
         }
+
         res.getWriter().flush();
     }
 
@@ -95,7 +108,9 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
 
     @Override
     public void destroy() {
-        tailer.stop();
+        if (tailer != null) {
+            tailer.stop();
+        }
     }
 
 

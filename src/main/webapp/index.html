@@ -34,7 +34,7 @@
             background-color: #333;
             color: #EEE;
             text-shadow: #000 0 0 2px;
-            height: 400px;
+            height: 600px;
             padding: 10px;
             font-size: 12px;
             line-height: 20px;
@@ -103,7 +103,7 @@
                                     return;
                                 }
                                 //socket.send({log:log.options[log.selectedIndex].value});
-                                connectedEndpoint.push(document.location.toString() + 'logviewer' ,null,
+                                connectedEndpoint.push(document.location.toString() + 'log-viewer' ,null,
                                     $.atmosphere.request = {data: 'log=' +log.options[log.selectedIndex].value});
                             });
                         } else if (data.tail) {
@@ -118,7 +118,7 @@
                 }
             }
 
-            var location = document.location.toString() + 'logviewer';
+            var location = document.location.toString() + 'log-viewer';
 
             $.atmosphere.subscribe(location, !callbackAdded ? callback : null, $.atmosphere
                     .request = { transport: 'websocket' });
