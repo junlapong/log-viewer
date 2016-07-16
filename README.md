@@ -1,6 +1,8 @@
 log-viewer
 ==========
 
+[![Build Status](https://travis-ci.org/junlapong/log-viewer.svg?branch=master)](https://travis-ci.org/junlapong/log-viewer)
+
 An `Atmosphere` based log viewer for simulating a Unix tail command in a browser.
 
 The application uses the
