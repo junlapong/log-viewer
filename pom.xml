@@ -11,23 +11,20 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <slf4j.version>1.7.21</slf4j.version>
+        <slf4j.version>1.7.22</slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
 	</properties>
 
     <dependencies>
         <dependency>
             <groupId>org.atmosphere</groupId>
-            <artifactId>atmosphere-compat-tomcat7</artifactId>
+            <artifactId>atmosphere-compat-tomcat</artifactId>
             <version>2.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.atmosphere</groupId>
             <artifactId>atmosphere-runtime</artifactId>
-            <version>2.4.5</version>
+            <version>2.4.9</version>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -55,6 +52,13 @@
             <artifactId>slf4j-simple</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -64,12 +68,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.6.0</version>
+                <inherited>true</inherited>
                 <configuration>
-                    <compilerArgs>
-                        <!-- <arg>-verbose</arg> -->
-                        <arg>-Xlint:all</arg>
-                    </compilerArgs>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
 
@@ -80,12 +83,6 @@
                 <version>2.2</version>
                 <configuration>
                     <path>/${project.artifactId}</path>
-                    <server>TomcatServer</server>
-                    <url>http://localhost:8080/manager/text</url>
-                    <port>8080</port>
-                    <update>true</update>
-                    <username>manager</username>
-                    <password>manager</password>
                 </configuration>
             </plugin>
         </plugins>

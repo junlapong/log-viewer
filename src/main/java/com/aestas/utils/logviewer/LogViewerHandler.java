@@ -95,7 +95,7 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
                 res.getWriter().write(event.getMessage().toString());
             }
             else {
-                res.getWriter().write("");
+                //res.getWriter().write("");
             }
         }
 
