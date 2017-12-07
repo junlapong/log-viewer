@@ -1,3 +1,5 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -83,51 +85,60 @@
                 // Websocket events.
                 $.atmosphere.log('info', ["response.state: " + response.state]);
                 $.atmosphere.log('info', ["response.transport: " + response.transport]);
-
+				
                 detectedTransport = response.transport;
                 if (response.transport != 'polling' && response.state != 'connected' && response.state != 'closed') {
                     $.atmosphere.log('info', ["response.responseBody: " + response.responseBody]);
                     if (response.status == 200) {
-                        var data = jQuery.parseJSON(response.responseBody);
-                        if (data == null) return;
-                        if (data.filename) {
-                            notice.html('watching ' + data.filename);
-                        } else if (data.logs) {
-                            var selector = $("#selector select");
-                            $.each(data.logs, function() {
-                                var log = new Option(this, this);
-                                if ($.browser.msie) selector[0].add(log); else selector[0].add(log, null);
-                            });
-                            selector.bind('change', function(e) {
-                                var log = selector[0];
-                                if (log.selectedIndex == 0) {
-                                    $("#info,#tail").empty();
-                                    return;
-                                }
-                                //socket.send({log:log.options[log.selectedIndex].value});
-                                connectedEndpoint.push(document.location.toString() + 'log-viewer' ,null,
-                                    $.atmosphere.request = {data: 'log=' +log.options[log.selectedIndex].value});
-                            });
-                        } else if (data.tail) {
-                            buffer.append(data.tail.join('<br/>'));
-                            buffer.scrollTop(lines * 100)
-                            lines = lines + data.tail.length;
-                        } else {
-                            //
-                        }
+                    	if(response.responseBody == "") {
+                    		connectedEndpoint.push('${pageContext.request.requestURL}log-viewer' ,null,
+            	                    $.atmosphere.request = {data: decodeURI('${pageContext.request.queryString}') });
+                    	} else {
+	                        var data = jQuery.parseJSON(response.responseBody);
+	                        if (data == null) return;
+	                        if (data.filename) {
+	                            notice.html('watching ' + data.filename);
+	                        } else if (data.logs) {
+	                            var selector = $("#selector select");
+	                            $.each(data.logs, function() {
+	                                var log = new Option(this, this);
+	                                if ($.browser.msie) selector[0].add(log); else selector[0].add(log, null);
+	                            });
+	                            selector.bind('change', function(e) {
+	                                var log = selector[0];
+	                                if (log.selectedIndex == 0) {
+	                                    $("#info,#tail").empty();
+	                                    return;
+	                                }
+	                                //socket.send({log:log.options[log.selectedIndex].value});
+	                                connectedEndpoint.push('${pageContext.request.requestURL}log-viewer' ,null,
+	                                    $.atmosphere.request = {data: 'log=' +log.options[log.selectedIndex].value});
+	                            });
+	                        } else if (data.tail) {
+	                            buffer.append(data.tail.join('<br/>'));
+	                            buffer.scrollTop(lines * 100)
+	                            lines = lines + data.tail.length;
+	                        } else {
+	                            //
+	                        }
+                    	}
 
                     }
                 }
             }
 
-            var location = document.location.toString() + 'log-viewer';
-
+            var location = '${pageContext.request.requestURL}log-viewer';
+			var request = { transport: 'websocket' };
+			
             $.atmosphere.subscribe(location, !callbackAdded ? callback : null, $.atmosphere
-                    .request = { transport: 'websocket' });
+                    .request = request);
+											
             connectedEndpoint = $.atmosphere.response;
             callbackAdded = true;
+			
+			
         }
-
+        
         function connect() {
             subscribe();
         }
