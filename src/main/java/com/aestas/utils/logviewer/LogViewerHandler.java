@@ -77,6 +77,8 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
             final String postPayload = req.getReader().readLine();
             if (postPayload != null && postPayload.startsWith("log=")) {
                 tailer = Tailer.create(new File(FILE_TO_WATCH + "//" + postPayload.split("=")[1]), this, 500);
+            } else if(postPayload != null && postPayload.startsWith("file=")) {
+            	tailer = Tailer.create(new File(postPayload.split("=")[1]), this, 500);
             }
             GLOBAL_BROADCASTER.broadcast(asJson("filename", postPayload.split("=")[1]));
             res.getWriter().flush();
@@ -102,7 +104,7 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
         res.getWriter().flush();
     }
 
-    private static List<String> buffer = new ArrayList<String>();
+    
 
     private final Object o = new Object();
 
@@ -116,13 +118,11 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
 
     @Override
     public void handle(String line) {
+    	List<String> buffer = new ArrayList<String>();
         buffer.add(line);
-        if (buffer.size() == 10) {
-            GLOBAL_BROADCASTER.broadcast(asJsonArray("tail", buffer));
-            buffer.clear();
-        }
+        GLOBAL_BROADCASTER.broadcast(asJsonArray("tail", buffer));
     }
-
+    
     protected String asJson(final String key, final String value) {
         return "{\"" + key + "\":\"" + value + "\"}";
     }
