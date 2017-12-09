@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class LogViewerHandler extends TailerListenerAdapter implements AtmosphereHandler {
 
-    private final static String FILE_TO_WATCH = "/var/log/";
+    private final static String FILE_TO_WATCH = "/Program Files/apache-tomcat-7.0.62/logs";
     //private final static String FILE_TO_WATCH = "d://temp";
     private static Tailer tailer;
     private Broadcaster GLOBAL_BROADCASTER = null;
@@ -115,12 +115,17 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
         }
     }
 
+    List<String> buffer = new ArrayList<String>();
 
     @Override
     public void handle(String line) {
-    	List<String> buffer = new ArrayList<String>();
         buffer.add(line);
+    }
+    
+    @Override
+    public void endOfFileReached() {
         GLOBAL_BROADCASTER.broadcast(asJsonArray("tail", buffer));
+        buffer = new ArrayList<String>();
     }
     
     protected String asJson(final String key, final String value) {
