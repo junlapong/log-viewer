@@ -35,6 +35,9 @@
             padding: 10px;
             font-size: 12px;
             line-height: 20px;
+			width: 97%;
+			white-space: nowrap;
+			overflow: auto;
         }
 
         .trebuchet {
@@ -66,9 +69,10 @@
     <option value="" selected>-- select a log --</option>
 </select>
 </div>
-<div id="info" class="trebuchet"></div>
-<div id="tail" class="monospace selection"></div>
-
+<div>
+	<div id="info" class="trebuchet"></div>
+	<textarea id="tail" class="monospace selection"></textarea>
+</div>
 <script src="js/jquery-1.4.3.js"></script>
 <script src="js/jquery.form.js"></script>
 <script src="js/jquery.atmosphere.js"></script>
@@ -115,9 +119,16 @@
 	                                    $.atmosphere.request = {data: 'log=' +log.options[log.selectedIndex].value});
 	                            });
 	                        } else if (data.tail) {
-	                            buffer.append(data.tail.join('<br/>'));
-	                            buffer.scrollTop(lines * 100)
+								var tempLog = "";
+	                            
+								$.each(data.tail, function(index, value) {
+									tempLog += value + "\n";
+								});
 	                            lines = lines + data.tail.length;
+								
+								buffer.val(buffer.val() + tempLog)
+								buffer.scrollTop(lines * 100);
+	                            tempLog = "";
 	                        } else {
 	                            //
 	                        }
