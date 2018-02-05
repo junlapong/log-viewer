@@ -82,7 +82,8 @@
         var callbackAdded = false;
         var detectedTransport = null;
         var lines = 0, notice = $("#info"), buffer = $('#tail');
-
+        var location = 'log-viewer';
+        
         function subscribe() {
             // jquery.atmosphere.response
             function callback(response) {
@@ -95,7 +96,7 @@
                     $.atmosphere.log('info', ["response.responseBody: " + response.responseBody]);
                     if (response.status == 200) {
                     	if(response.responseBody == "") {
-                    		connectedEndpoint.push('${pageContext.request.requestURL}log-viewer' ,null,
+                    		connectedEndpoint.push(location ,null,
             	                    $.atmosphere.request = {data: decodeURI('${pageContext.request.queryString}') });
                     	} else {
 	                        var data = jQuery.parseJSON(response.responseBody);
@@ -115,7 +116,7 @@
 	                                    return;
 	                                }
 	                                //socket.send({log:log.options[log.selectedIndex].value});
-	                                connectedEndpoint.push('${pageContext.request.requestURL}log-viewer' ,null,
+	                                connectedEndpoint.push(location ,null,
 	                                    $.atmosphere.request = {data: 'log=' +log.options[log.selectedIndex].value});
 	                            });
 	                        } else if (data.tail) {
@@ -138,7 +139,6 @@
                 }
             }
 
-            var location = '${pageContext.request.requestURL}log-viewer';
 			var request = { transport: 'websocket' };
 			
             $.atmosphere.subscribe(location, !callbackAdded ? callback : null, $.atmosphere
