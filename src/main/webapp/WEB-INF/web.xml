@@ -14,6 +14,11 @@
         <!-- If you want to use Servlet 3.0 -->
         <async-supported>true</async-supported>
         <!-- List of init-param -->
+        
+        <init-param>
+            <param-name>org.atmosphere.cpr.broadcasterClass</param-name>
+            <param-value>com.aestas.utils.logviewer.LogViewerBroadcaster</param-value>
+        </init-param>
 
         <!--Uncomment if you are using a WebServer that doesn't support Comet or you want to use blocking I/O-->
         <!--

@@ -1,7 +1,14 @@
 package com.aestas.utils.logviewer;
 
-import org.apache.commons.io.input.Tailer;
-import org.apache.commons.io.input.TailerListenerAdapter;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.atmosphere.cpr.AtmosphereConfig;
 import org.atmosphere.cpr.AtmosphereHandler;
 import org.atmosphere.cpr.AtmosphereResource;
@@ -11,25 +18,14 @@ import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.json.simple.JSONValue;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author luciano - luciano@aestasit.com
  */
-public class LogViewerHandler extends TailerListenerAdapter implements AtmosphereHandler,  AtmosphereServletProcessor {
+public class LogViewerHandler implements AtmosphereHandler,  AtmosphereServletProcessor {
 
-    private final static String FILE_TO_WATCH = "/Program Files/apache-tomcat-7.0.62/logs";
+    private final static String FILE_TO_WATCH = "/Programas/apache-tomcat-8.0.47/logs";
     //private final static String FILE_TO_WATCH = "d://temp";
-    private static Tailer tailer;
     private BroadcasterFactory broadcasterFactory;
-
-    //private Map<String, Broadcaster> brs = new HashMap<String, Broadcaster>();
 
     private static List<String> watchableLogs = new ArrayList<String>();
     
@@ -62,7 +58,7 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
     @Override
     public void onRequest(final AtmosphereResource event) throws IOException {
 
-        HttpServletRequest req = event.getRequest();
+        HttpServletRequest req = event.getRequest();//req.getContextPath(); req
         HttpServletResponse res = event.getResponse();
         res.setContentType("text/html");
         res.addHeader("Cache-Control", "private");
@@ -71,7 +67,7 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
         Broadcaster broadcaster = getBroadcaster(event);
 
         if (req.getMethod().equalsIgnoreCase("GET")) {
-
+        	//event.getAtmosphereConfig().getBroadcasterFactory().get("prueba")
             event.suspend();
             if (watchableLogs.size() != 0) {
             	broadcaster.broadcast(asJsonArray("logs", watchableLogs));
@@ -83,26 +79,38 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
             res.getWriter().flush();
         } else { // POST
 
-            // Very lame... req.getParameterValues("log")[0] doesn't work
             final String postPayload = req.getReader().readLine();
+            String filePath = null;
             if (postPayload != null && postPayload.startsWith("log=")) {
-                tailer = Tailer.create(new File(FILE_TO_WATCH + "//" + postPayload.split("=")[1]), this, 500);
+            	filePath = FILE_TO_WATCH + "//" + postPayload.split("=")[1];
             } else if(postPayload != null && postPayload.startsWith("file=")) {
-            	tailer = Tailer.create(new File(postPayload.split("=")[1]), this, 500);
+            	filePath = postPayload.split("=")[1];
+            }
+            if(filePath != null) {
+            	((LogViewerBroadcaster) broadcaster).startTailer(filePath);
             }
             broadcaster.broadcast(asJson("filename", postPayload.split("=")[1]));
             res.getWriter().flush();
         }
     }
 
-	private Broadcaster getBroadcaster(final AtmosphereResource event) {
-		Broadcaster broadcaster = broadcasterFactory.lookup("/log-viewer");
+	private Broadcaster getBroadcaster(final AtmosphereResource resource) {
+		String fileId = getIdFile(resource);
+		Broadcaster broadcaster = broadcasterFactory.lookup("/log-viewer/" + fileId);
 		if(broadcaster == null) {
-			broadcaster = broadcasterFactory.get("/log-viewer");
-			broadcaster.addAtmosphereResource(event);
+			broadcaster = broadcasterFactory.get("/log-viewer/" + fileId);
 		}
+
+		broadcaster.addAtmosphereResource(resource);
 		return broadcaster;
 	}
+	
+    private String getIdFile(AtmosphereResource resource) {
+    	HttpServletRequest req = resource.getRequest();
+    	String path = req.getContextPath() + req.getServletPath() + "/";
+    	String uri = req.getRequestURI();
+    	return uri.replace(path, "");
+    }
 
     @Override
     public void onStateChange(final AtmosphereResourceEvent event) throws IOException {
@@ -123,30 +131,10 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
         res.getWriter().flush();
     }
 
-    
-
-    private final Object o = new Object();
-
     @Override
     public void destroy() {
-        if (tailer != null) {
-            tailer.stop();
-        }
     }
 
-    List<String> buffer = new ArrayList<String>();
-
-    @Override
-    public void handle(String line) {
-        buffer.add(line);
-    }
-    
-    @Override
-    public void endOfFileReached() {
-    	getBroadcaster(null).broadcast(asJsonArray("tail", buffer));
-        buffer = new ArrayList<String>();
-    }
-    
     protected String asJson(final String key, final String value) {
         return "{\"" + key + "\":\"" + value + "\"}";
     }

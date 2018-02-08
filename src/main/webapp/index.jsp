@@ -1,5 +1,30 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%@ page import="java.security.MessageDigest" %>
+<%@ page import="java.util.Formatter" %>
+<%@ page import="java.security.NoSuchAlgorithmException" %>
+<%!
+private String getHashString(String string) {
+	MessageDigest messageDigest;
+	String encryptedString = null;
+	try {
+		messageDigest = MessageDigest.getInstance("SHA-256");
+		byte[] hashByteArray = messageDigest.digest(string.getBytes());
+		encryptedString = byteArray2Hex(hashByteArray);
+	} catch (NoSuchAlgorithmException e) {
+		e.printStackTrace();
+	}
+	
+	return encryptedString;
+}
+private static String byteArray2Hex(final byte[] hash) {
+    Formatter formatter = new Formatter();
+    for (byte b : hash) {
+        formatter.format("%02x", b);
+    }
+    return formatter.toString();
+}
+%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -82,7 +107,7 @@
         var callbackAdded = false;
         var detectedTransport = null;
         var lines = 0, notice = $("#info"), buffer = $('#tail');
-        var location = 'log-viewer';
+        var location = 'log-viewer/<%=getHashString(request.getParameter("file")) %>';
         
         function subscribe() {
             // jquery.atmosphere.response
@@ -98,7 +123,7 @@
                     	if(response.responseBody == "") {
                     		connectedEndpoint.push(location ,null,
             	                    $.atmosphere.request = {data: decodeURI('${pageContext.request.queryString}') });
-                    	} else {
+                    	} else if(response.responseBody != "X") {
 	                        var data = jQuery.parseJSON(response.responseBody);
 	                        if (data == null) return;
 	                        if (data.filename) {
