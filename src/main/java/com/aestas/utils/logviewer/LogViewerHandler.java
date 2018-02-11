@@ -23,12 +23,24 @@ import org.json.simple.JSONValue;
  */
 public class LogViewerHandler implements AtmosphereHandler,  AtmosphereServletProcessor {
 
-    private final static String FILE_TO_WATCH = "/Programas/apache-tomcat-8.0.47/logs";
+    private final static String FILE_TO_WATCH = "/Program Files/apache-tomcat-7.0.62/logs";
     //private final static String FILE_TO_WATCH = "d://temp";
     private BroadcasterFactory broadcasterFactory;
 
     private static List<String> watchableLogs = new ArrayList<String>();
     
+	public static String getFileToWatch() {
+		return FILE_TO_WATCH;
+	}
+
+	public static List<String> getWatchableLogs() {
+		return watchableLogs;
+	}
+
+	public static void setWatchableLogs(List<String> watchableLogs) {
+		LogViewerHandler.watchableLogs = watchableLogs;
+	}
+
 	@Override
 	public void init(AtmosphereConfig config) throws ServletException {
 		this.broadcasterFactory = config.getBroadcasterFactory();
@@ -66,32 +78,18 @@ public class LogViewerHandler implements AtmosphereHandler,  AtmosphereServletPr
         
         Broadcaster broadcaster = getBroadcaster(event);
 
-        if (req.getMethod().equalsIgnoreCase("GET")) {
-        	//event.getAtmosphereConfig().getBroadcasterFactory().get("prueba")
-            event.suspend();
-            if (watchableLogs.size() != 0) {
-            	broadcaster.broadcast(asJsonArray("logs", watchableLogs));
-            }
-            else {
-                System.out.println("log not found");
-            }
-
-            res.getWriter().flush();
-        } else { // POST
-
+        if (req.getMethod().equalsIgnoreCase("POST")) {
             final String postPayload = req.getReader().readLine();
             String filePath = null;
-            if (postPayload != null && postPayload.startsWith("log=")) {
-            	filePath = FILE_TO_WATCH + "//" + postPayload.split("=")[1];
-            } else if(postPayload != null && postPayload.startsWith("file=")) {
+            if(postPayload != null && postPayload.startsWith("file=")) {
             	filePath = postPayload.split("=")[1];
+            	if(filePath != null) {
+            		((LogViewerBroadcaster) broadcaster).startTailer(filePath);
+            		broadcaster.broadcast(asJson("filename", postPayload.split("=")[1]));
+            	}
             }
-            if(filePath != null) {
-            	((LogViewerBroadcaster) broadcaster).startTailer(filePath);
-            }
-            broadcaster.broadcast(asJson("filename", postPayload.split("=")[1]));
-            res.getWriter().flush();
         }
+        res.getWriter().flush();
     }
 
 	private Broadcaster getBroadcaster(final AtmosphereResource resource) {
