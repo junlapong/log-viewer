@@ -2,6 +2,7 @@ package com.aestas.utils.logviewer;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,9 +84,10 @@ public class LogViewerHandler implements AtmosphereHandler,  AtmosphereServletPr
             String filePath = null;
             if(postPayload != null && postPayload.startsWith("file=")) {
             	filePath = postPayload.split("=")[1];
+            	filePath = URLDecoder.decode(filePath, "UTF-8");
             	if(filePath != null) {
             		((LogViewerBroadcaster) broadcaster).startTailer(filePath);
-            		broadcaster.broadcast(asJson("filename", postPayload.split("=")[1]));
+            		broadcaster.broadcast(asJson("filename", filePath));
             	}
             }
         }
@@ -133,7 +135,8 @@ public class LogViewerHandler implements AtmosphereHandler,  AtmosphereServletPr
     public void destroy() {
     }
 
-    protected String asJson(final String key, final String value) {
+    protected String asJson(final String key, String value) {
+    	value = JSONValue.escape(value);
         return "{\"" + key + "\":\"" + value + "\"}";
     }
 

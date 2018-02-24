@@ -28,7 +28,8 @@ public class LogViewerTailerListener extends TailerListenerAdapter {
         buffer = new ArrayList<String>();
     }
     
-    protected String asJson(final String key, final String value) {
+    protected String asJson(final String key, String value) {
+    	value = JSONValue.escape(value);
         return "{\"" + key + "\":\"" + value + "\"}";
     }
 
