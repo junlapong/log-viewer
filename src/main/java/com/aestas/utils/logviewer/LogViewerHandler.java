@@ -1,33 +1,52 @@
 package com.aestas.utils.logviewer;
 
-import org.apache.commons.io.input.Tailer;
-import org.apache.commons.io.input.TailerListenerAdapter;
+import java.io.File;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.atmosphere.cpr.AtmosphereConfig;
 import org.atmosphere.cpr.AtmosphereHandler;
 import org.atmosphere.cpr.AtmosphereResource;
 import org.atmosphere.cpr.AtmosphereResourceEvent;
+import org.atmosphere.cpr.AtmosphereServletProcessor;
 import org.atmosphere.cpr.Broadcaster;
+import org.atmosphere.cpr.BroadcasterFactory;
 import org.json.simple.JSONValue;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author luciano - luciano@aestasit.com
  */
-public class LogViewerHandler extends TailerListenerAdapter implements AtmosphereHandler {
+public class LogViewerHandler implements AtmosphereHandler,  AtmosphereServletProcessor {
 
     private final static String FILE_TO_WATCH = "/Program Files/apache-tomcat-7.0.62/logs";
     //private final static String FILE_TO_WATCH = "d://temp";
-    private static Tailer tailer;
-    private Broadcaster GLOBAL_BROADCASTER = null;
-
-    //private Map<String, Broadcaster> brs = new HashMap<String, Broadcaster>();
+    private BroadcasterFactory broadcasterFactory;
 
     private static List<String> watchableLogs = new ArrayList<String>();
+    
+	public static String getFileToWatch() {
+		return FILE_TO_WATCH;
+	}
+
+	public static List<String> getWatchableLogs() {
+		return watchableLogs;
+	}
+
+	public static void setWatchableLogs(List<String> watchableLogs) {
+		LogViewerHandler.watchableLogs = watchableLogs;
+	}
+
+	@Override
+	public void init(AtmosphereConfig config) throws ServletException {
+		this.broadcasterFactory = config.getBroadcasterFactory();
+		
+	}
 
     public LogViewerHandler() {
 
@@ -46,43 +65,51 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
             System.out.println("either logsDir doesn't exist or is not a folder");
         }
 
-        System.out.println("log count: " + watchableLogs.size());
+         System.out.println("log count: " + watchableLogs.size());
     }
 
     @Override
     public void onRequest(final AtmosphereResource event) throws IOException {
 
-        HttpServletRequest req = event.getRequest();
+        HttpServletRequest req = event.getRequest();//req.getContextPath(); req
         HttpServletResponse res = event.getResponse();
         res.setContentType("text/html");
         res.addHeader("Cache-Control", "private");
         res.addHeader("Pragma", "no-cache");
+        
+        Broadcaster broadcaster = getBroadcaster(event);
 
-        if (req.getMethod().equalsIgnoreCase("GET")) {
-
-            event.suspend();
-            if (GLOBAL_BROADCASTER == null) GLOBAL_BROADCASTER = event.getBroadcaster();
-
-            if (watchableLogs.size() != 0) {
-                GLOBAL_BROADCASTER.broadcast(asJsonArray("logs", watchableLogs));
-            }
-            else {
-                System.out.println("log not found");
-            }
-
-            res.getWriter().flush();
-        } else { // POST
-
-            // Very lame... req.getParameterValues("log")[0] doesn't work
+        if (req.getMethod().equalsIgnoreCase("POST")) {
             final String postPayload = req.getReader().readLine();
-            if (postPayload != null && postPayload.startsWith("log=")) {
-                tailer = Tailer.create(new File(FILE_TO_WATCH + "//" + postPayload.split("=")[1]), this, 500);
-            } else if(postPayload != null && postPayload.startsWith("file=")) {
-            	tailer = Tailer.create(new File(postPayload.split("=")[1]), this, 500);
+            String filePath = null;
+            if(postPayload != null && postPayload.startsWith("file=")) {
+            	filePath = postPayload.split("=")[1];
+            	filePath = URLDecoder.decode(filePath, "UTF-8");
+            	if(filePath != null) {
+            		((LogViewerBroadcaster) broadcaster).startTailer(filePath);
+            		broadcaster.broadcast(asJson("filename", filePath));
+            	}
             }
-            GLOBAL_BROADCASTER.broadcast(asJson("filename", postPayload.split("=")[1]));
-            res.getWriter().flush();
         }
+        res.getWriter().flush();
+    }
+
+	private Broadcaster getBroadcaster(final AtmosphereResource resource) {
+		String fileId = getIdFile(resource);
+		Broadcaster broadcaster = broadcasterFactory.lookup("/log-viewer/" + fileId);
+		if(broadcaster == null) {
+			broadcaster = broadcasterFactory.get("/log-viewer/" + fileId);
+		}
+
+		broadcaster.addAtmosphereResource(resource);
+		return broadcaster;
+	}
+	
+    private String getIdFile(AtmosphereResource resource) {
+    	HttpServletRequest req = resource.getRequest();
+    	String path = req.getContextPath() + req.getServletPath() + "/";
+    	String uri = req.getRequestURI();
+    	return uri.replace(path, "");
     }
 
     @Override
@@ -104,31 +131,12 @@ public class LogViewerHandler extends TailerListenerAdapter implements Atmospher
         res.getWriter().flush();
     }
 
-    
-
-    private final Object o = new Object();
-
     @Override
     public void destroy() {
-        if (tailer != null) {
-            tailer.stop();
-        }
     }
 
-    List<String> buffer = new ArrayList<String>();
-
-    @Override
-    public void handle(String line) {
-        buffer.add(line);
-    }
-    
-    @Override
-    public void endOfFileReached() {
-        GLOBAL_BROADCASTER.broadcast(asJsonArray("tail", buffer));
-        buffer = new ArrayList<String>();
-    }
-    
-    protected String asJson(final String key, final String value) {
+    protected String asJson(final String key, String value) {
+    	value = JSONValue.escape(value);
         return "{\"" + key + "\":\"" + value + "\"}";
     }
 

@@ -25,3 +25,4 @@ mvn package
 ## Contributor
  - 2011 - [Aestas IT](https://github.com/aestasit/logviewer)
  - 2016 - [Junlapong L.](https://github.com/junlapong/log-viewer)
+ - 2017-18 - Enrique de Miguel
